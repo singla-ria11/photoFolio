@@ -1,5 +1,5 @@
 //
-import appLogo_2 from "../../images/appLogo-2.png";
+import appLogo_2 from "../../src/images/appLogo-2.png";
 
 export default function Navbar() {
   return (
