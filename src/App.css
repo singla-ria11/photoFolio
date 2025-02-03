@@ -1,0 +1,45 @@
+/* .App {
+  text-align: center;
+} */
+
+.nav-cont{
+  display: flex;
+  background-color: rgb(152, 205, 244);
+  /* background-color: rgb(9, 84, 133); */
+  /* background-color: rgb(46, 132, 208); */
+}
+
+.logo-cont{
+  margin: 10px;
+  margin-left: 20px;
+  display: flex;
+  gap: 15px;
+  align-items: center;
+}
+.logo-cont img{
+  height: 55px;
+  width: 55px;
+}
+.logo-cont span{
+  font-size: 1.3rem;
+  font-weight: bold;
+  /* color:beige ; */
+}
+
+/* .main-body-cont{
+  margin: 20px;
+  margin-top: 30px;
+  width: 75%;
+  text-align: center;
+  margin-left: 50%;
+  transform: translateX(-50%);
+} */
+
+@keyframes App-logo-spin {
+  from {
+    transform: rotate(0deg);
+  }
+  to {
+    transform: rotate(360deg);
+  }
+}
