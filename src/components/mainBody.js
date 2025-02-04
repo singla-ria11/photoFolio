@@ -1,27 +1,72 @@
 //
-import { useState, useEffect } from "react";
+import { useState, useEffect, useReducer } from "react";
 import { toast, ToastContainer } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
 
-import albumsData from "../albumsData.json";
+// import albumsData from "../albumsData.json";
 import AlbumsPage from "./albumsComponents/albumsPage";
 import ImagesPage from "./imagesComponents/imagesPage";
 
+// firebase related imports
+import { db } from "../firestoreInit";
+import {
+  getDocs,
+  collection,
+  addDoc,
+  serverTimestamp,
+  updateDoc,
+  doc,
+} from "firebase/firestore";
+
+function reducer(albums, action) {
+  const { type, payload } = action;
+  switch (type) {
+    case "Get_Albums":
+      return payload.fetchedAlbums;
+    case "Create_Album":
+      return [{ id: payload.id, name: payload.name }, ...albums];
+    case "Add_Image":
+      const updatedAlbums = albums.map(async (a) => {
+        if (a.name === payload.album.name) {
+          a.images
+            ? a.images.unshift({ title: payload.title, src: payload.src })
+            : (a.images = [{ title: payload.title, src: payload.src }]);
+        }
+        return a;
+      });
+      return updatedAlbums;
+    default:
+      return albums;
+  }
+}
+
 export default function MainBody() {
-  const [albums, setAlbums] = useState([...albumsData]);
+  // const [albums, setAlbums] = useState([...albumsData]);
+  // const [albums, setAlbums] = useState([]);
+  const [albums, dispatch] = useReducer(reducer, []);
   const [isAlbumClicked, setIsAlbumClicked] = useState(false);
   const [selectedAlbum, setSelectedAlbum] = useState(null);
 
-  //
   useEffect(() => {
-    setAlbums([...albumsData]);
+    getAlbums();
   }, []);
+
+  async function getAlbums() {
+    const snapsot = await getDocs(collection(db, "albums"));
+
+    const fetchedAlbums = snapsot.docs.map((doc) => ({
+      id: doc.id,
+      ...doc.data(),
+    }));
+    // setAlbums(fetchedAlbums);
+    dispatch({ type: "Get_Albums", payload: { fetchedAlbums } });
+  }
 
   useEffect(() => {
     selectedAlbum ? setIsAlbumClicked(true) : setIsAlbumClicked(false);
   }, [selectedAlbum]);
 
-  function createAlbum(name) {
+  async function createAlbum(name) {
     const existedAlbum = albums.find(
       (a) => a.name.toLowerCase() === name.trim().toLowerCase()
     );
@@ -29,7 +74,13 @@ export default function MainBody() {
       toast.error("Oops! Album already exists.");
       return;
     }
-    setAlbums([{ name }, ...albums]);
+
+    // database operation
+    const docRef = await addDoc(collection(db, "albums"), {
+      name,
+      createdAt: serverTimestamp(),
+    });
+    dispatch({ type: "Create_Album", payload: { id: docRef.id, name } });
     toast.success("Album created successfully.");
   }
 
@@ -44,17 +95,17 @@ export default function MainBody() {
     setSelectedAlbum(null);
   }
 
-  function addImage(album, title, url) {
-    const updatedAlbums = albums.map((a) => {
-      if (a.name === album.name) {
-        a.images.unshift({ title, src: url });
-      }
-      return a;
+  async function addImage(album, title, url) {
+    const docRef = doc(db, "albums", album.id);
+    await updateDoc(docRef, {
+      images: [{ title, src: url }, ...(album.images || [])],
     });
-    setAlbums(updatedAlbums);
+
+    dispatch({ type: "Add_Image", payload: { album, title, src: url } });
+
     setSelectedAlbum({
       name: album.name,
-      images: [...album.images],
+      images: [{ title, src: url }, ...(album.images || [])],
     });
     toast.success("Image added successfully.");
   }
