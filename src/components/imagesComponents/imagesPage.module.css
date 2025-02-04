@@ -109,13 +109,42 @@ h2{
     border: 1px solid rgb(226, 226, 226);
     border-radius: 10px 10px 0 0;
     padding: 7px;
-
+    position: relative;
 }
 
 .img_card_cont:hover{
     box-shadow: 0px 0px 8px lightgray;
-    /* box-shadow: 0px 0px 8px lightblue; */
 }
+
+.img_actions{
+    visibility: hidden;
+    position: absolute;
+    top: -10px;
+    right: -10px;
+    display: flex;
+    gap: 10px;
+    cursor: pointer;
+}
+
+.img_card_cont:hover .img_actions{
+    visibility: visible;
+}
+
+.edit_icon, .delete_icon{
+    height: 30px;
+    width: 30px;
+    transition: transform 0.2s linear;
+    /* color: rgb(0, 98, 255); */
+}
+
+.edit_icon:hover, .delete_icon:hover{
+    transform: scale(1.1);
+    /* color: rgb(0, 0, 255); */
+}
+
+/* .delete_icon:hover{
+    color: rgb(248, 3, 3);
+} */
 
 .thumbnail_cont{
     display: flex;
@@ -240,3 +269,4 @@ h4{
     text-align: center;
     color: white;
 }
+

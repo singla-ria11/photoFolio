@@ -17,7 +17,7 @@ export default function ImagesPage({ album, backToAlbumsPage, addImage }) {
   const [currentIndex, setCurrentIndex] = useState(0);
 
   const searchInputRef = useRef();
-  console.log(album);
+  console.log("Selected Album", album);
 
   function handleAddImgBtn() {
     setImgAddition(imgAddition ? false : true);
