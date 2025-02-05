@@ -16,6 +16,8 @@ import {
   serverTimestamp,
   updateDoc,
   doc,
+  arrayRemove,
+  getDoc,
 } from "firebase/firestore";
 
 function reducer(albums, action) {
@@ -25,8 +27,8 @@ function reducer(albums, action) {
       return payload.fetchedAlbums;
     case "Create_Album":
       return [{ id: payload.id, name: payload.name }, ...albums];
-    case "Add_Image":
-      const updatedAlbums = albums.map(async (a) => {
+    case "Add_Image": {
+      const updatedAlbums = albums.map((a) => {
         if (a.name === payload.album.name) {
           a.images
             ? a.images.unshift({ title: payload.title, src: payload.src })
@@ -35,6 +37,24 @@ function reducer(albums, action) {
         return a;
       });
       return updatedAlbums;
+    }
+    case "Edit_Image": {
+      const { imageToEdit, album, title, src } = payload;
+      const albumIndex = albums.findIndex((a) => a.id === album.id);
+      const imageIndex = albums[albumIndex].images.indexOf(imageToEdit);
+      albums[albumIndex].images[imageIndex].title = title;
+      albums[albumIndex].images[imageIndex].src = src;
+      return [...albums];
+    }
+    case "Delete_Image": {
+      const { selectedAlbum, image } = payload;
+      const albumIndex = albums.findIndex((a) => {
+        return a.id === selectedAlbum.id;
+      });
+      const imageIndex = albums[albumIndex].images.indexOf(image);
+      albums[albumIndex].images.splice(imageIndex, 1);
+      return [...albums];
+    }
     default:
       return albums;
   }
@@ -86,6 +106,7 @@ export default function MainBody() {
 
   function handleAlbumClick(clickedAlbum) {
     if (clickedAlbum) {
+      console.log(clickedAlbum);
       setSelectedAlbum(clickedAlbum);
     }
   }
@@ -98,16 +119,59 @@ export default function MainBody() {
   async function addImage(album, title, url) {
     const docRef = doc(db, "albums", album.id);
     await updateDoc(docRef, {
-      images: [{ title, src: url }, ...(album.images || [])],
+      images: [
+        { title, src: url, createdAt: new Date() },
+        ...(album.images || []),
+      ],
     });
 
     dispatch({ type: "Add_Image", payload: { album, title, src: url } });
 
-    setSelectedAlbum({
-      name: album.name,
-      images: [{ title, src: url }, ...(album.images || [])],
-    });
+    const updatedAlbum = await getDoc(doc(db, "albums", album.id));
+    setSelectedAlbum({ id: docRef.id, ...updatedAlbum.data() });
+    // setSelectedAlbum({
+    //   id: album.id,
+    //   name: album.name,
+    //   images: [{ title, src: url }, ...(album.images || [])],
+    // });
     toast.success("Image added successfully.");
+  }
+
+  async function editImage(imageToEdit, album, title, url) {
+    // update Database
+    const editedImage = { ...imageToEdit, title, src: url };
+    const docRef = doc(db, "albums", album.id);
+    const snapsot = await getDoc(docRef);
+    const updatedImages = snapsot
+      .data()
+      .images.map((img) => (img.src === imageToEdit.src ? editedImage : img));
+    await updateDoc(docRef, {
+      images: updatedImages,
+    });
+
+    dispatch({
+      type: "Edit_Image",
+      payload: { imageToEdit, album, title, src: url },
+    });
+    toast.success("Image edited successfully.");
+  }
+
+  async function deleteImage(image) {
+    console.log("From delete function", albums);
+
+    const docRef = doc(db, "albums", selectedAlbum.id);
+    await updateDoc(docRef, {
+      images: arrayRemove(image),
+    });
+
+    dispatch({
+      type: "Delete_Image",
+      payload: { selectedAlbum, image },
+    });
+
+    const updatedAlbum = await getDoc(doc(db, "albums", selectedAlbum.id));
+    setSelectedAlbum({ id: docRef.id, ...updatedAlbum.data() });
+    toast.success("Image deleted successfully.");
   }
 
   return (
@@ -119,6 +183,8 @@ export default function MainBody() {
             album={selectedAlbum}
             backToAlbumsPage={goBack}
             addImage={addImage}
+            editImage={editImage}
+            deleteImage={deleteImage}
           />
         ) : (
           <AlbumsPage

@@ -8,11 +8,20 @@ import ImageCard from "./imageCard";
 import AddImage from "./addImage";
 import ImageGalleryModal from "./imageGalleryModal";
 
-export default function ImagesPage({ album, backToAlbumsPage, addImage }) {
+export default function ImagesPage({
+  album,
+  backToAlbumsPage,
+  addImage,
+  editImage,
+  deleteImage,
+}) {
   const [imgAddition, setImgAddition] = useState(false);
   const [showSearchIcon, setShowSearchIcon] = useState(true);
   const [searchedImages, setSearchedImages] = useState([]);
   const [isModalOpen, setIsModalOpen] = useState(false);
+  const [imageToEdit, setImageToEdit] = useState(null);
+  const [imgTitle, setImgTitle] = useState("");
+  const [imgUrl, setImgUrl] = useState("");
   // const [currentImage, setCurrentImage] = useState(null);
   const [currentIndex, setCurrentIndex] = useState(0);
 
@@ -20,7 +29,19 @@ export default function ImagesPage({ album, backToAlbumsPage, addImage }) {
   console.log("Selected Album", album);
 
   function handleAddImgBtn() {
+    console.log("image addition value", imgAddition);
+
     setImgAddition(imgAddition ? false : true);
+  }
+
+  function populateAddImgForm(image) {
+    setImgTitle(image.title);
+    setImgUrl(image.src);
+  }
+  function cancelEditing() {
+    console.log("imageToEdit value", imageToEdit);
+
+    setImageToEdit(null);
   }
   function handleInputChange(e) {
     const searchedValue = e.target.value;
@@ -42,7 +63,15 @@ export default function ImagesPage({ album, backToAlbumsPage, addImage }) {
       : album?.images;
 
     const imageCards = imagesToRender?.map((img, i) => (
-      <ImageCard key={img.title} image={img} index={i} openModel={openModel} />
+      <ImageCard
+        key={img.title}
+        image={img}
+        index={i}
+        openModel={openModel}
+        setImageToEdit={setImageToEdit}
+        populateAddImgForm={populateAddImgForm}
+        deleteImage={deleteImage}
+      />
     ));
     return imageCards;
   }
@@ -71,7 +100,19 @@ export default function ImagesPage({ album, backToAlbumsPage, addImage }) {
   return (
     <>
       <div className={styles.images_main_cont}>
-        {imgAddition && <AddImage album={album} addImage={addImage} />}
+        {(imgAddition || imageToEdit) && (
+          <AddImage
+            imgTitle={imgTitle}
+            setImgTitle={setImgTitle}
+            imgUrl={imgUrl}
+            setImgUrl={setImgUrl}
+            album={album}
+            addImage={addImage}
+            imageToEdit={imageToEdit}
+            setImageToEdit={setImageToEdit}
+            editImage={editImage}
+          />
+        )}
         <div className={styles.images_top_cont}>
           <div className={styles.top_left_cont}>
             <img
@@ -113,10 +154,12 @@ export default function ImagesPage({ album, backToAlbumsPage, addImage }) {
               />
             </div>
             <button
-              className={imgAddition ? styles.cancel_btn : styles.add_btn}
-              onClick={handleAddImgBtn}
+              className={
+                imgAddition || imageToEdit ? styles.cancel_btn : styles.add_btn
+              }
+              onClick={imageToEdit ? cancelEditing : handleAddImgBtn}
             >
-              {imgAddition ? "Cancel" : "Add image"}
+              {imgAddition || imageToEdit ? "Cancel" : "Add image"}
             </button>
           </div>
         </div>
